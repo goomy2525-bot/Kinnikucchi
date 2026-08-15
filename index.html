@@ -239,6 +239,19 @@ button{cursor:pointer}
   padding:7px 11px;border-radius:999px;background:#fff;border:1px solid var(--line);
   font-size:13px;font-weight:900;
 }
+.top-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.profile-button{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:999px;
+  padding:7px 10px;
+  font-size:12px;
+  font-weight:900;
+}
 .record-button{
   width:100%;border:0;border-radius:17px;background:#222;color:#fff;
   padding:15px 14px;font-size:16px;font-weight:900;
@@ -351,6 +364,79 @@ button{cursor:pointer}
 .bar div{height:100%;background:#222;width:0;transition:.25s}
 .exp-row{display:flex;justify-content:space-between;font-size:10px;color:#5c564f;margin-top:3px;font-weight:700}
 
+
+/* PROFILE */
+#profileScreen{
+  padding:calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 18px);
+  display:flex;
+  flex-direction:column;
+  background:var(--cream);
+}
+.profile-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:18px;
+}
+.profile-title{
+  font-size:20px;
+  font-weight:950;
+}
+.profile-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:18px;
+}
+.profile-type{
+  text-align:center;
+  padding:10px 0 16px;
+  border-bottom:1px solid #eee8dd;
+}
+.profile-type-label{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:800;
+}
+.profile-type-value{
+  margin-top:4px;
+  font-size:23px;
+  font-weight:950;
+}
+.profile-row{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  padding:11px 0;
+  border-bottom:1px solid #eee8dd;
+  font-size:13px;
+}
+.profile-row:last-child{border-bottom:0}
+.profile-row span:first-child{
+  color:var(--muted);
+  font-weight:700;
+}
+.profile-row strong{
+  text-align:right;
+}
+.profile-note{
+  margin-top:12px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.6;
+}
+.rediagnose{
+  margin-top:auto;
+  width:100%;
+  border:1px solid var(--line);
+  background:#fff;
+  color:#222;
+  border-radius:18px;
+  padding:16px;
+  font-size:14px;
+  font-weight:900;
+}
+
 /* TRAINING */
 #trainingScreen{
   padding:calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 18px);
@@ -444,7 +530,10 @@ button{cursor:pointer}
         <div class="date-main" id="dateMain"></div>
         <div class="weekday" id="weekday"></div>
       </div>
-      <div class="level" id="levelText">Lv.1</div>
+      <div class="top-actions">
+          <button class="profile-button" id="openProfile">プロフィール</button>
+          <div class="level" id="levelText">Lv.1</div>
+        </div>
     </div>
     <button class="record-button" id="openTraining">トレーニングを記録する</button>
     <div class="today-summary" id="todaySummary">今日はまだトレーニングしてない</div>
@@ -473,6 +562,24 @@ button{cursor:pointer}
       </div>
     </div>
   </div>
+</section>
+
+
+<section class="screen hidden-right" id="profileScreen">
+  <div class="profile-head">
+    <button class="back-button" id="backProfile">‹</button>
+    <div class="profile-title">プロフィール</div>
+    <div class="head-space"></div>
+  </div>
+
+  <div class="profile-card" id="profileCard"></div>
+
+  <div class="profile-note">
+    この設定を基準に、同じ重量でもあなたにとってどれくらいの負荷かを判定する。
+    今後はここから筋肉部位ごとの成長量にも反映していく予定。
+  </div>
+
+  <button class="rediagnose" id="rediagnose">診断をやり直す</button>
 </section>
 
 <section class="screen hidden-right" id="trainingScreen">
@@ -538,6 +645,8 @@ let reps=10;
 const onboardingScreen=document.getElementById("onboardingScreen");
 const homeScreen=document.getElementById("homeScreen");
 const trainingScreen=document.getElementById("trainingScreen");
+const profileScreen=document.getElementById("profileScreen");
+const profileCard=document.getElementById("profileCard");
 const questionWrap=document.getElementById("questionWrap");
 const nextQuestion=document.getElementById("nextQuestion");
 const backQuestion=document.getElementById("backQuestion");
@@ -800,6 +909,39 @@ function environmentLabel(v){
   return "自宅＋ジム";
 }
 
+function experienceLabel(v){
+  if(v==="none") return "ほぼ未経験";
+  if(v==="short") return "〜6か月";
+  if(v==="mid") return "6か月〜2年";
+  if(v==="long") return "2年以上";
+  return "未設定";
+}
+
+function renderProfile(){
+  const p=data.profile;
+  if(!p){
+    profileCard.innerHTML='<div class="inline-note">診断データがまだないよ。</div>';
+    return;
+  }
+
+  profileCard.innerHTML=`
+    <div class="profile-type">
+      <div class="profile-type-label">現在の判定タイプ</div>
+      <div class="profile-type-value">${p.levelLabel || "ビギナー"}</div>
+    </div>
+
+    <div class="profile-row"><span>体重</span><strong>${(p.weight!==undefined && p.weight!==null)?p.weight:"-"} kg</strong></div>
+    <div class="profile-row"><span>筋トレ歴</span><strong>${experienceLabel(p.experience)}</strong></div>
+    <div class="profile-row"><span>週トレ頻度</span><strong>${(p.weeklyFrequency!==undefined && p.weeklyFrequency!==null)?p.weeklyFrequency:"-"}回</strong></div>
+    <div class="profile-row"><span>環境</span><strong>${environmentLabel(p.environment)}</strong></div>
+    <div class="profile-row"><span>ベンチプレス</span><strong>${(p.referenceLifts && p.referenceLifts.bench!==undefined)?p.referenceLifts.bench:0} kg</strong></div>
+    <div class="profile-row"><span>スクワット</span><strong>${(p.referenceLifts && p.referenceLifts.squat!==undefined)?p.referenceLifts.squat:0} kg</strong></div>
+    <div class="profile-row"><span>ショルダープレス</span><strong>${(p.referenceLifts && p.referenceLifts.press!==undefined)?p.referenceLifts.press:0} kg</strong></div>
+    <div class="profile-row"><span>基準倍率</span><strong>${(p.baselineMultiplier!==undefined && p.baselineMultiplier!==null)?p.baselineMultiplier:1}</strong></div>
+  `;
+}
+
+
 function updateNextState(){
   const q=questions[step];
   if(q.type==="result"){
@@ -928,6 +1070,17 @@ function backHome(){
   homeScreen.classList.remove("hidden-left");
   trainingScreen.classList.add("hidden-right");
 }
+
+function openProfile(){
+  renderProfile();
+  homeScreen.classList.add("hidden-left");
+  profileScreen.classList.remove("hidden-right");
+}
+
+function closeProfile(){
+  homeScreen.classList.remove("hidden-left");
+  profileScreen.classList.add("hidden-right");
+}
 function showToast(text){
   toast.textContent=text;
   toast.classList.add("show");
@@ -936,6 +1089,32 @@ function showToast(text){
 
 document.getElementById("openTraining").addEventListener("click",openTraining);
 document.getElementById("backHome").addEventListener("click",backHome);
+document.getElementById("openProfile").addEventListener("click",openProfile);
+document.getElementById("backProfile").addEventListener("click",closeProfile);
+
+document.getElementById("rediagnose").addEventListener("click",()=>{
+  if(!confirm("診断を最初からやり直す？\n今までのトレーニング記録は残るよ。")) return;
+
+  data.setupComplete=false;
+  data.profile=null;
+  saveData();
+
+  profileScreen.classList.add("hidden-right");
+  homeScreen.classList.add("hidden");
+  onboardingScreen.classList.remove("hidden");
+
+  answers={
+    weight:"",
+    experience:"",
+    frequency:"",
+    environment:"",
+    bench:"",
+    squat:"",
+    press:""
+  };
+  step=0;
+  renderQuestion();
+});
 
 document.querySelectorAll("#menu button").forEach(btn=>{
   btn.addEventListener("click",()=>{
